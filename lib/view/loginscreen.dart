@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sbterp/business_logic/usecase/validation.dart';
+import 'package:sbterp/business_logic/view_model/tblsetts_vm.dart';
 
 import 'package:sbterp/utils/navigation.dart';
 
@@ -36,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final _acountVm = Provider.of<AccountVM>(context, listen: false);
+    final _TblSets = Provider.of<TblSetTsVM>(context, listen: false);
 return MainContainer(
     widget: Scaffold(
       // appBar: AppBar(elevation: 0),
@@ -58,10 +60,7 @@ return MainContainer(
             height: 100,
           ),
           Center(
-              child: Image(image: AssetImage("assets/logo.png")),
-
-
-                  ),
+              child: Image(image: AssetImage("assets/logo.png")),),
 
           const SizedBox(
             height: 50,
@@ -71,21 +70,27 @@ return MainContainer(
             controller: userName,
             iconData: Icons.person,
             hint: "اسم المستخدم",
-            errorMessage: "×طأ في الادخال",
+            errorMessage: "خطأ في الادخال",
 
           ),
           PasswordTextField(
             controller: password,
             validator: Validator.isValidPassword,
             hint: "كلمة المرور",
-            errorMessage: "×طأ في الادخال",
+            errorMessage: "خطأ في الادخال",
           ),
           CustomBtn(
               name: "تسجيل الدخول",
               action: () async {
                 if (formK.currentState!.validate()) {
-
+                  showDialog(context: context, builder: (
+                      context) {
+                    return const Center(
+                        child: CircularProgressIndicator());
+                  });
                   var userM = await _acountVm.login(userName.text);
+                  await _TblSets.GetAllTBLS();
+                  Navigator.pop(context);
                   if (userM != null && userM.userpass == password.text) {
                     if (!mounted) {
                       return;
@@ -93,7 +98,9 @@ return MainContainer(
                     _acountVm.keepLogin( userM.username!,userM.cashbox!,userM.storid!);
                     // if (userM.jop== "مندوب مبيعات"){Navigation.puchReplace(const LandingPage(), context);}
                     // if (userM.jop== "عميل"){Navigation.puchReplace(const Revivable(), context);}
-                     if (userM.jop== "مدير نظام"){Navigation.puchReplace(const Homescreen(), context);}
+                     if (userM.jop== "مدير نظام"){
+                       Navigation.puchReplace(const Homescreen(), context);
+                     }
 
                   } else {
                     if (!mounted) {

@@ -27,6 +27,22 @@ class GroupItemSetupsRepository {
       throw Exception(err);
     }
   }
+  Future<GroupItemSetupsM?> GetGroupset(String name) async {
+    try {
+      var url = Uri.parse("${Apis.baseUrl}${Apis.groubitemsetups}/$name");
+
+      var response =
+      await http.get(url, headers: {'Accept': 'application/json'});
+      if (response.statusCode == 200) {
+        var res = jsonDecode(response.body) as Map<String,dynamic>;
+        return GroupItemSetupsM.formJson(res);
+      }
+      return null;
+    } on Exception catch (err) {
+      print(err.toString());
+      throw Exception(err);
+    }
+  }
 
   Future<Object> AddGroup(GroupItemSetupsM groupM) async {
     try {

@@ -144,4 +144,21 @@ class AccountRep {
       throw Exception(err);
     }
   }
+
+  Future<List<CustomerM>?> GetMandobCustomers(int mandobId) async {
+    try {
+      var url = Uri.parse("${Apis.baseUrl}${Apis.customer}/$mandobId");
+
+      var response = await http.get(url, headers: {'Accept': 'application/json'});
+      if (response.statusCode == 200) {
+        var res = jsonDecode(response.body) as List;
+        var d = res.map((e)=>CustomerM.formJson(e)).toList();
+        return d;
+      }
+      return null;
+    } on Exception catch (err) {
+      print(err.toString());
+      throw Exception(err);
+    }
+  }
 }

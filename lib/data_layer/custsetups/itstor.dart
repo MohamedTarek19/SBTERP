@@ -36,7 +36,6 @@ class ItemStoreRepository {
   Future<ItstorM?> losttSearchBySerial(String barcode) async{
     try{
       var url=Uri.parse("https://mobapi.teletech-egypt.com/api/itstors/$barcode");
-
       var response=await http.get(url,
           headers:{ 'Accept':'application/json'
           });
@@ -46,15 +45,11 @@ class ItemStoreRepository {
         var res=  jsonDecode(response.body) as Map<String,dynamic>;
         return ItstorM.formJson(res);
       }
-
       return null;
-
-
     }
     catch (err){
       print(err.toString());
       throw Exception(err);
-
     }}
   Future<Object> CreateItem(ItstorM storIt) async {
     var mmap ={
@@ -99,6 +94,23 @@ class ItemStoreRepository {
   Future<List<ItstorM>?> GetAllItems() async {
     try {
       var url = Uri.parse("${Apis.baseUrl}${Apis.itstor}/");
+      var response =
+      await http.get(url, headers: {'Accept': 'application/json'});
+      if (response.statusCode == 200) {
+        var res = jsonDecode(response.body) as List;
+        var d = res.map((e)=>ItstorM.formJson(e)).toList();
+        return d;
+      }
+      return null;
+    } on Exception catch (err) {
+      print(err.toString());
+      throw Exception(err);
+    }
+  }
+  Future<List<ItstorM>?> GetItemsByStoreId(int StoreId) async {
+    try {
+      var url = Uri.parse("http://erpapi.teletech-egypt.com/IFindBystorid?storid=$StoreId");
+      print("http://erpapi.teletech-egypt.com/IFindBystorid?storid=$StoreId");
       var response =
       await http.get(url, headers: {'Accept': 'application/json'});
       if (response.statusCode == 200) {

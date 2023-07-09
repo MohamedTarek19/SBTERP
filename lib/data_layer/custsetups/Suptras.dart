@@ -4,14 +4,15 @@ import 'package:http/http.dart' as http;
 import 'package:sbterp/apis/api_endpoints.dart';
 import 'dart:io';
 import 'package:sbterp/business_logic/model/custtra_m.dart';
+import 'package:sbterp/business_logic/model/suptras_m.dart';
 
-class AccountReptra {
-  Future<Object> CreateCustomertra(CusttraM custtraM) async {
+class SuppReptra {
+  Future<Object> CreateSuppliertra(SuptrasM SupptraM) async {
     try {
-      var url = Uri.parse(Apis.baseUrl + Apis.custtra);
+      var url = Uri.parse(Apis.baseUrl + Apis.suptras);
 
       var response = await http.post(url,
-          body: custtraM.toJson(), headers: {'Accept': 'application/json'});
+          body: SupptraM.toJson(), headers: {'Accept': 'application/json'});
       if (response.statusCode == 200) {
         return response.statusCode;
       }
@@ -22,9 +23,9 @@ class AccountReptra {
     }
   }
 
-  Future<CusttraM?> losttSearchBySerial(int code) async{
+  Future<SuptrasM?> losttSearchBySerial(int code) async{
     try{
-      var url=Uri.parse("${Apis.baseUrl}${Apis.custtra}/$code");
+      var url=Uri.parse("https://mobapi.teletech-egypt.com/api/suptras/$code");
 
       var response=await http.get(url,
           headers:{ 'Accept':'application/json'
@@ -33,7 +34,7 @@ class AccountReptra {
       {
 
         var res=  jsonDecode(response.body) as Map<String,dynamic>;
-        return CusttraM.formJson(res);
+        return SuptrasM.formJson(res);
       }
 
       return null;
@@ -45,12 +46,12 @@ class AccountReptra {
       throw Exception(err);
 
     }}
-  Future<Object> lostReport(CusttraM custtel) async{
+  Future<Object> lostReport(SuptrasM supptra) async{
     print("dsdsdsd");
     try{
-      var url=Uri.parse(Apis.baseUrl+Apis.custtra);
+      var url=Uri.parse(Apis.baseUrl+Apis.suptras);
 
-      var response=await http.post(url,body: custtel.toJson(),
+      var response=await http.post(url,body: supptra.toJson(),
           headers:{ 'Accept':'application/json'
           });
       if(response.statusCode==201) {
@@ -68,5 +69,24 @@ class AccountReptra {
 
     }
 
+  }
+
+
+  Future<List<SuptrasM>?> GetAllTransactions() async {
+    try {
+      var url = Uri.parse("${Apis.baseUrl}${Apis.suptras}/");
+
+      var response =
+      await http.get(url, headers: {'Accept': 'application/json'});
+      if (response.statusCode == 200) {
+        var res = jsonDecode(response.body) as List;
+        var d = res.map((e)=>SuptrasM.formJson(e)).toList();
+        return d;
+      }
+      return null;
+    } on Exception catch (err) {
+      print(err.toString());
+      throw Exception(err);
+    }
   }
 }

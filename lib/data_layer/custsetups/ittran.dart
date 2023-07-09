@@ -23,7 +23,7 @@ class AccountRep {
   }
   Future<IttransM?> losttSearchBySerial(String barcode,int storcode) async{
     try{
-      var url=Uri.parse("https://mobapi.teletech-egypt.com/api/ittrans/$barcode?storcode=$storcode");
+      var url=Uri.parse("${Apis.baseUrl}${Apis.ittran}/$barcode?storcode=$storcode");
 
       var response=await http.get(url,
           headers:{ 'Accept':'application/json'

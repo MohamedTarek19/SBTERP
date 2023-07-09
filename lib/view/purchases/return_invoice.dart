@@ -1,13 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sbterp/business_logic/model/boxtrans_m.dart';
+import 'package:sbterp/business_logic/model/customer_m.dart';
+import 'package:sbterp/business_logic/model/custtra_m.dart';
+import 'package:sbterp/business_logic/model/itstor_m.dart';
+import 'package:sbterp/business_logic/model/ittrans.dart';
+import 'package:sbterp/business_logic/model/porefdets_m.dart';
+import 'package:sbterp/business_logic/model/porefhdrs_m.dart';
+import 'package:sbterp/business_logic/model/sodet_m.dart';
+import 'package:sbterp/business_logic/model/sohdr_m.dart';
+import 'package:sbterp/business_logic/model/supsetups_m.dart';
+import 'package:sbterp/business_logic/model/suptras_m.dart';
+import 'package:sbterp/business_logic/view_model/account_vm.dart';
+import 'package:sbterp/business_logic/view_model/boxtrans_vm.dart';
+import 'package:sbterp/business_logic/view_model/cashboxset_vm.dart';
+import 'package:sbterp/business_logic/view_model/customer_vm.dart';
+import 'package:sbterp/business_logic/view_model/custtra_vm.dart';
+import 'package:sbterp/business_logic/view_model/itstor_vm.dart';
+import 'package:sbterp/business_logic/view_model/ittran_vm.dart';
+import 'package:sbterp/business_logic/view_model/porefdets_vm.dart';
+import 'package:sbterp/business_logic/view_model/porefhdrs_vm.dart';
+import 'package:sbterp/business_logic/view_model/sodet_vm.dart';
+import 'package:sbterp/business_logic/view_model/sohdr_vm.dart';
+import 'package:sbterp/business_logic/view_model/subsetups_vm.dart';
+import 'package:sbterp/business_logic/view_model/suptras_vm.dart';
+
+import 'package:sbterp/view/purchases/purchases_helper.dart';
 import 'package:sbterp/widgets/custom_appbar3.dart';
 import 'package:sbterp/widgets/customCalender.dart';
 import 'package:sbterp/widgets/custom_dropdown.dart';
+import 'package:sbterp/widgets/custom_dropdown_subsetup.dart';
+import 'package:sbterp/widgets/custom_dropdowncustomers.dart';
 import 'package:sbterp/widgets/main_container.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:group_radio_button/group_radio_button.dart';
+import 'package:sbterp/view/invoice_helper.dart';
 
 class ReturnInvoice extends StatefulWidget {
   const ReturnInvoice({Key? key}) : super(key: key);
@@ -20,8 +51,7 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
   DateTime? Date;
   String? stockName;
   String? source;
-  String? sourceName;
-  List<String>? sources = ["عميل", "مورد"];
+  SubSetupsM? CustDropDown;
   String? ItemName = "fixed";
   bool viewHeader = false;
   DateTime? selectedDate;
@@ -29,24 +59,36 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
   String? barCodeVal;
   double? percent = 0.62;
   double totalprice = 0;
-  double? p;
+  double? paidVal;
+  //double p = 0;
   TextEditingController qty = TextEditingController();
   List<ItemsInInv>? items = [];
   TextEditingController price = TextEditingController();
-  Map<int,ItemsInInv> SelectedItem = {};
+  Map<int, ItemsInInv> SelectedItem = {};
   List<Color> SelectedItemColor = [];
+  double remain = 0;
+  String _verticalGroupValue = "آجل";
   String nme = "التاريخ";
-  Future barCodeReader() async{
-    String? code = await FlutterBarcodeScanner.scanBarcode("#ff0000", 'Cancel', true, ScanMode.BARCODE);
+  List<CustomerM>? custs = [];
+  TextEditingController paid = TextEditingController();
+  header head = header();
+
+  Future barCodeReader() async {
+    String? code = await FlutterBarcodeScanner.scanBarcode(
+        "#ff0000", 'Cancel', true, ScanMode.BARCODE);
     setState(() {
       barCodeVal = code;
     });
-    print("#############################"+barCodeVal.toString());
+    print("#############################" + barCodeVal.toString());
   }
 
+  @override
+  initState() {
+    super.initState();
+    // Add listeners to this class
+  }
 
   DisplayItems() async {
-
     return showDialog(
         context: context,
         builder: (context) {
@@ -58,10 +100,10 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
             ),
             title: Container(
                 child: Text(
-                  'إضافة صنف',
-                  style: TextStyle(color: Colors.black, fontSize: 17),
-                  textDirection: ui.TextDirection.rtl,
-                )),
+              'إضافة صنف',
+              style: TextStyle(color: Colors.black, fontSize: 17),
+              textDirection: ui.TextDirection.rtl,
+            )),
             content: StatefulBuilder(builder: (context, setState) {
               return Directionality(
                 textDirection: ui.TextDirection.rtl,
@@ -70,7 +112,8 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          border:Border.all(color: Colors.black,style: BorderStyle.solid),
+                          border: Border.all(
+                              color: Colors.black, style: BorderStyle.solid),
                           borderRadius: BorderRadius.circular(10),
                           color: Colors.white,
                         ),
@@ -82,10 +125,11 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                             border: InputBorder.none,
                             hintStyle: TextStyle(),
                             hintText: "إدخل إسم المنتج",
-                          ),),
+                          ),
+                        ),
                       ),
                       Container(
-                        margin: EdgeInsets.only(top: 5,bottom: 10),
+                        margin: EdgeInsets.only(top: 5, bottom: 10),
                         child: Divider(
                           color: Colors.black,
                           height: 1,
@@ -95,79 +139,96 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                         ),
                       ),
                       Container(
-                        padding: EdgeInsets.only(left: 5,right: 5),
+                        padding: EdgeInsets.only(left: 5, right: 5),
                         width: MediaQuery.of(context).size.width,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              //color: Colors.blue,
-                                child: Text('منتج',style: TextStyle(fontSize: 14,fontWeight: FontWeight.bold),)),
+                                //color: Colors.blue,
+                                child: Text(
+                              'منتج',
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
+                            )),
                             Container(
-                              //color: Colors.blue,
-                                child: Directionality(textDirection: ui.TextDirection.ltr,
-                                    child: Text('السعر',style: TextStyle(fontSize: 14,fontWeight: FontWeight.bold),))),
-                            Container(
-                              //color: Colors.blue,
-                                child: Directionality(textDirection: ui.TextDirection.ltr,
-                                    child: Text('الباركود',style: TextStyle(fontSize: 14,fontWeight: FontWeight.bold),))),
+                                //color: Colors.blue,
+                                child: Directionality(
+                                    textDirection: ui.TextDirection.ltr,
+                                    child: Text(
+                                      'السعر',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold),
+                                    ))),
                           ],
                         ),
                       ),
                       SizedBox(
-                        height: MediaQuery.of(context).size.height*0.5,
+                        height: MediaQuery.of(context).size.height * 0.5,
                         width: MediaQuery.of(context).size.width,
                         child: ListView.builder(
-                            itemCount: 100,
+                            itemCount: InvoiceHelper.items?.length,
                             itemBuilder: (BuildContext context, int index) {
                               return GestureDetector(
-                                onTap: ()async{
-
-                                  await AddingItem(ItemName.toString() + index.toString(),"${10000220 + index}",index.toDouble());
+                                onTap: () async {
+                                  print(InvoiceHelper.items![index].bal);
+                                  await AddingItem(
+                                      InvoiceHelper.items![index].sitemdisc,
+                                      InvoiceHelper.items![index].itso,
+                                      int.tryParse(InvoiceHelper
+                                                  .items![index].sitbarcode ??
+                                              '0') ??
+                                          0,
+                                      InvoiceHelper.items![index]);
                                 },
                                 child: Container(
                                   height: 50,
                                   child: Card(
                                     color: Color.fromRGBO(240, 240, 240, 1),
-                                    child: Row
-                                      (
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Directionality(
                                           textDirection: ui.TextDirection.rtl,
                                           child: Container(
-                                              width: MediaQuery.of(context).size.width*0.18,
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.18,
                                               child: SingleChildScrollView(
-                                                  scrollDirection: Axis.horizontal,
-                                                  child: Text(ItemName.toString() + index.toString(),
-                                                    style: TextStyle(fontSize: 16),))
-                                          ),
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  child: Text(
+                                                    InvoiceHelper.items![index]
+                                                            .sitemdisc ??
+                                                        '',
+                                                    style:
+                                                        TextStyle(fontSize: 16),
+                                                  ))),
                                         ),
                                         Directionality(
                                           textDirection: ui.TextDirection.ltr,
                                           child: Container(
-                                              width: MediaQuery.of(context).size.width*0.12,
-                                              child: Center(
-                                                child: SingleChildScrollView(
-                                                    scrollDirection: Axis.horizontal,
-                                                    child: Text(index.toString(),
-                                                      style: TextStyle(fontSize: 16 ),)),
-                                              )
-                                          ),
-                                        ),
-                                        Directionality(
-                                          textDirection: ui.TextDirection.ltr,
-                                          child: Container(
-                                              width: MediaQuery.of(context).size.width*0.2,
+                                              width: MediaQuery.of(context)
+                                                      .size
+                                                      .width *
+                                                  0.2,
                                               child: SingleChildScrollView(
-                                                  scrollDirection: Axis.horizontal,
-                                                  child: Text("${10000220 + index}",
-                                                    style: TextStyle(fontSize: 16 ),))
-                                          ),
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  child: Text(
+                                                    InvoiceHelper
+                                                            .items![index].itso
+                                                            .toString() ??
+                                                        '',
+                                                    style:
+                                                        TextStyle(fontSize: 16),
+                                                  ))),
                                         ),
                                       ],
                                     ),
-
                                   ),
                                 ),
                               );
@@ -193,7 +254,8 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
           );
         });
   }
-  AddingItem(String? name, String? barcode,double? pce) async {
+
+  AddingItem(String? name, double? pce, int? id, ItstorM itsor) async {
     price = TextEditingController();
     return showDialog(
         context: context,
@@ -201,25 +263,25 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
           return AlertDialog(
             backgroundColor: Color.fromRGBO(240, 240, 240, 1),
             elevation: 100,
-            shape: RoundedRectangleBorder(
+            shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(20.0)),
             ),
             title: Container(
-                child: Text(
-                  'إضافة صنف',
-                  style: TextStyle(color: Colors.black, fontSize: 17),
-                  textDirection: ui.TextDirection.rtl,
-                )),
+                child: const Text(
+              'إضافة صنف',
+              style: TextStyle(color: Colors.black, fontSize: 17),
+              textDirection: ui.TextDirection.rtl,
+            )),
             content: StatefulBuilder(builder: (context, setState) {
               return Directionality(
                 textDirection: ui.TextDirection.rtl,
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-
                       Container(
                         decoration: BoxDecoration(
-                          border:Border.all(color: Colors.black,style: BorderStyle.solid),
+                          border: Border.all(
+                              color: Colors.black, style: BorderStyle.solid),
                           borderRadius: BorderRadius.circular(10),
                           color: Colors.white,
                         ),
@@ -232,11 +294,12 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                             hintStyle: TextStyle(),
                             enabled: false,
                             hintText: name,
-                          ),),
+                          ),
+                        ),
                       ),
                       Container(
-                        margin: EdgeInsets.only(top: 5,bottom: 10),
-                        child: Divider(
+                        margin: EdgeInsets.only(top: 5, bottom: 10),
+                        child: const Divider(
                           color: Colors.black,
                           height: 1,
                           thickness: 1,
@@ -244,9 +307,39 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                           endIndent: 10,
                         ),
                       ),
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 2, right: 3),
+                              )),
+                          Expanded(
+                              flex: 2,
+                              child: Container(
+                                child: Center(
+                                  child: Text(
+                                    "الكمية",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              )),
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 3, right: 2),
+                              )),
+                        ],
+                      ),
                       Container(
-                        margin:
-                        EdgeInsets.only(top: 2, bottom: 5, left: 5, right: 5),
+                        margin: EdgeInsets.only(
+                            top: 2, bottom: 5, left: 5, right: 5),
                         child: NumberInputWithIncrementDecrement(
                           buttonArrangement: ButtonArrangement.incRightDecLeft,
                           incIcon: Icons.add,
@@ -258,7 +351,7 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                             border: Border.all(style: BorderStyle.none),
                           ),
                           numberFieldDecoration:
-                          InputDecoration(border: InputBorder.none),
+                              InputDecoration(border: InputBorder.none),
                           separateIcons: true,
                           scaleHeight: 0.9,
                           incIconSize: 25,
@@ -268,12 +361,43 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                           widgetContainerDecoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                          ), controller: qty,
+                          ),
+                          controller: qty,
                         ),
                       ),
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 2, right: 3),
+                              )),
+                          Expanded(
+                              flex: 2,
+                              child: Container(
+                                child: Center(
+                                  child: Text(
+                                    "السعر",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              )),
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 3, right: 2),
+                              )),
+                        ],
+                      ),
                       Container(
-                        margin:
-                        EdgeInsets.only(top: 2, bottom: 5, left: 5, right: 5),
+                        margin: EdgeInsets.only(
+                            top: 2, bottom: 5, left: 5, right: 5),
                         child: NumberInputWithIncrementDecrement(
                           buttonArrangement: ButtonArrangement.incRightDecLeft,
                           incIcon: Icons.add,
@@ -285,8 +409,8 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                             border: Border.all(style: BorderStyle.none),
                           ),
                           numberFieldDecoration:
-                          InputDecoration(border: InputBorder.none),
-                          initialValue: pce??0,
+                              InputDecoration(border: InputBorder.none),
+                          initialValue: pce ?? 0,
                           separateIcons: true,
                           scaleHeight: 0.9,
                           incIconSize: 25,
@@ -296,10 +420,10 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                           widgetContainerDecoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                          ), controller: price,
+                          ),
+                          controller: price,
                         ),
                       ),
-
                     ],
                   ),
                 ),
@@ -313,15 +437,17 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                       onPressed: () {
                         ItemsInInv inv = ItemsInInv();
                         inv.itemName = name;
-                        inv.itemBarcode = barcode;
                         inv.qty = int.parse(qty.text);
                         inv.unit = "قطعة";
-                        inv.price = double.tryParse(price.text)??0.0;
-                        double total = inv.qty?.toDouble()??0;
-                        inv.totalPrice = (inv.price??0) * total;
+                        inv.price = double.tryParse(price.text) ?? 0.0;
+                        double total = inv.qty?.toDouble() ?? 0;
+                        inv.totalPrice = (inv.price ?? 0) * total;
+                        inv.barId = id;
                         setState(() {
-                          totalprice += (inv.totalPrice??0);
+                          totalprice += (inv.totalPrice ?? 0);
+                          head.total = totalprice;
                           items?.add(inv);
+                          inv.item = itsor;
                           SelectedItemColor.add(Colors.white);
                         });
                         Navigator.of(context).pop();
@@ -334,30 +460,678 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
         });
   }
 
+  errorMessage(String message) async {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Color.fromRGBO(240, 240, 240, 1),
+            elevation: 100,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0)),
+            ),
+            title: Container(
+                child: Text(
+              message,
+              style: TextStyle(color: Colors.black, fontSize: 17),
+              textDirection: ui.TextDirection.rtl,
+            )),
+            actions: [
+              Container(
+                width: MediaQuery.of(context).size.width,
+                child: Center(
+                  child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('حسنا')),
+                ),
+              )
+            ],
+          );
+        });
+  }
+
+  SavingInvoice(
+      PoRefhdrVM _PoRefhdrVm,
+      SupSetupsVM SuppVm,
+      SupptrarVM _SupptraVm,
+      BoxtransVM _boxtraVm,
+      AccountVM account_vm,
+      PoRefdetsVM _PoRefdetVm,
+      IttranVM _ittranVm,
+      ItstorVM _itStorVM) async {
+    remain = totalprice;
+    price = TextEditingController();
+    //await _SupptraVm.losttSearchBySerial(CustDropDown?.code??0);
+    _SupptraVm.SuptransList = [];
+    _SupptraVm.lctrsM = null;
+    await _SupptraVm.GetAllTransactions();
+    for (SuptrasM s in _SupptraVm.SuptransList ?? []) {
+      if (s.supid == (CustDropDown?.code ?? 0)) {
+        _SupptraVm.lctrsM = s;
+      }
+    }
+    // ignore: use_build_context_synchronously
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: Color.fromRGBO(240, 240, 240, 1),
+            elevation: 100,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0)),
+            ),
+            title: Container(
+                child: const Text(
+              'حفظ الفاتورة',
+              style: TextStyle(color: Colors.black, fontSize: 17),
+              textDirection: ui.TextDirection.rtl,
+            )),
+            content: StatefulBuilder(builder: (context, setState) {
+              return Directionality(
+                textDirection: ui.TextDirection.rtl,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 2, right: 3),
+                              )),
+                          Expanded(
+                              flex: 2,
+                              child: Container(
+                                child: const Center(
+                                  child: Text(
+                                    "الرصيد السابق",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              )),
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 3, right: 2),
+                              )),
+                        ],
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: Colors.black, style: BorderStyle.solid),
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.white,
+                        ),
+                        child: TextField(
+                          keyboardType: TextInputType.text,
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            //prefixIcon: Icon(Icons.search),
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(),
+                            enabled: false,
+                            hintText: _SupptraVm.lctrsM?.lastb.toString(),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 2, right: 3),
+                              )),
+                          Expanded(
+                              flex: 2,
+                              child: Container(
+                                child: const Center(
+                                  child: Text(
+                                    "إجمالي الفاتورة",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              )),
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 3, right: 2),
+                              )),
+                        ],
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: Colors.black, style: BorderStyle.solid),
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.white,
+                        ),
+                        child: TextField(
+                          keyboardType: TextInputType.text,
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            //prefixIcon: Icon(Icons.search),
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(),
+                            enabled: false,
+                            hintText: totalprice.toString(),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      //////////////////////////////////////////////////////////////////////////////////////////////////////////
+                      Container(
+                        child: RadioGroup<String>.builder(
+                          direction: Axis.horizontal,
+                          groupValue: _verticalGroupValue,
+                          onChanged: (String? val) {
+                            setState(() {
+                              _verticalGroupValue = val ?? '';
+                            });
+                          },
+                          items: ["نقدا", "آجل"],
+                          itemBuilder: (item) => RadioButtonBuilder(
+                            item,
+                            textPosition: RadioButtonTextPosition.left,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      //////////////////////////////////////////////////////////////////////////////////////////////////////////
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 2, right: 3),
+                              )),
+                          Expanded(
+                              flex: 2,
+                              child: Container(
+                                child: Center(
+                                  child: Text(
+                                    "المدفوع",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              )),
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 3, right: 2),
+                              )),
+                        ],
+                      ),
+                      Container(
+                        margin: EdgeInsets.only(
+                            top: 2, bottom: 5, left: 5, right: 5),
+                        child: NumberInputWithIncrementDecrement(
+                          onChanged: (val) {
+                            setState(() {
+                              paidVal = double.tryParse(val.toString()) ?? 0;
+                              print(double.tryParse(val.toString()) ?? 0);
+                              remain = totalprice;
+                              remain = remain - val;
+                            });
+                          },
+                          onDecrement: (val) {
+                            if (_verticalGroupValue == 'نقدا') {
+                              if (val < totalprice) {
+                                errorMessage('المبلغ المدفوع أقل من الإجمالي');
+                              }
+                            }
+                            setState(() {
+                              paidVal = double.tryParse(val.toString()) ?? 0;
+                              print(double.tryParse(val.toString()) ?? 0);
+                              remain = totalprice;
+                              remain = remain - val;
+                            });
+                          },
+                          onIncrement: (val) {
+                            print(val);
+                            setState(() {
+                              paidVal = double.tryParse(val.toString()) ?? 0;
+                              print(double.tryParse(val.toString()) ?? 0);
+                              remain = totalprice;
+                              remain = remain - val;
+                            });
+                          },
+                          buttonArrangement: ButtonArrangement.incRightDecLeft,
+                          incIcon: Icons.add,
+                          decIcon: Icons.remove,
+                          incIconDecoration: BoxDecoration(
+                            border: Border.all(style: BorderStyle.none),
+                          ),
+                          decIconDecoration: BoxDecoration(
+                            border: Border.all(style: BorderStyle.none),
+                          ),
+                          numberFieldDecoration:
+                              InputDecoration(border: InputBorder.none),
+                          separateIcons: true,
+                          scaleHeight: 0.9,
+                          incIconSize: 25,
+                          decIconSize: 25,
+                          incIconColor: Colors.black,
+                          decIconColor: Colors.black,
+                          widgetContainerDecoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          controller: paid,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 2, right: 3),
+                              )),
+                          Expanded(
+                              flex: 2,
+                              child: Container(
+                                child: Center(
+                                  child: Text(
+                                    "المتبقي",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              )),
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 3, right: 2),
+                              )),
+                        ],
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: Colors.black, style: BorderStyle.solid),
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.white,
+                        ),
+                        child: TextField(
+                          keyboardType: TextInputType.text,
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            //prefixIcon: Icon(Icons.search),
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(),
+                            enabled: false,
+                            hintText: remain.toString(),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 2, right: 3),
+                              )),
+                          Expanded(
+                              flex: 2,
+                              child: Container(
+                                child: Center(
+                                  child: Text(
+                                    "إجمالي الرصيد",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              )),
+                          Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 1,
+                                color: Colors.black,
+                                margin: EdgeInsets.only(left: 3, right: 2),
+                              )),
+                        ],
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: Colors.black, style: BorderStyle.solid),
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.white,
+                        ),
+                        child: TextField(
+                          keyboardType: TextInputType.text,
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            //prefixIcon: Icon(Icons.search),
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(),
+                            enabled: false,
+                            hintText: ((_SupptraVm.lctrsM?.lastb ?? 0) - remain)
+                                .toString(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            actions: [
+              Container(
+                width: MediaQuery.of(context).size.width,
+                child: Center(
+                  child: ElevatedButton(
+                      onPressed: () async {
+                        showDialog(
+                            context: context,
+                            builder: (context) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            });
+                        double p = double.parse(paid.text);
+                        var _boxsetVm =
+                            Provider.of<CashboxsetVM>(context, listen: false);
+                        //print(p > totalprice);
+                        if (totalprice == 0) {
+                          await errorMessage('الفاتورة فارغة');
+                        } else if (head.name == null) {
+                          await errorMessage('يجب عليك إختيار مورد');
+                        } else {
+                          if (_verticalGroupValue == 'نقدا') {
+                            if (p < totalprice) {
+                              await errorMessage('المبلغ المدفوع أقل من الإجمالي');
+                            } else {
+                              print(account_vm.user?.cashbox ?? '');
+
+                              print(head.storid);
+                              print('done');
+                              var cashboxsetM = await _boxsetVm.findboxbyname(account_vm.userCash.toString());
+                              var boxtrlastb = await _boxtraVm.losttSearchBySerial(cashboxsetM?.id ?? 0);
+                              var b = _boxtraVm.lostsM?.lastb;
+                              await _PoRefhdrVm.CreateInvoice(PoRefhdrsM(
+                                name: head.name,
+                                invno: 0,
+                                invdate: DateTime.tryParse(head.date ?? '') ??
+                                    DateTime.now(),
+                                invtot: head.total,
+                                salesman: head.salesman,
+                                storid: head.storid,
+                                vatpo: 0,
+                                stat: 0,
+                                dayno: 0,
+                                discount: 0,
+                              ));
+                              await _SupptraVm.CreateCustomertra(SuptrasM(
+                                id: 0,
+                                supid: CustDropDown?.code,
+                                disc: "فاتورة مرتد مشتريات",
+                                credit: paidVal ?? 0,
+                                debit: totalprice,
+                                docno:
+                                ((_PoRefhdrVm.Invoises?.last.invno ?? 0) + 1),
+                                lastb: ((_SupptraVm.lctrsM?.lastb ?? 0) - remain),
+                                docdate: DateTime.tryParse(head.date ?? '') ??
+                                    DateTime.now(),
+                              ));
+                              var mydocno = _boxtraVm.lostsM?.docno;
+                              mydocno = (mydocno! + 1);
+                              var statusCode = await _boxtraVm.Createrec(BoxtransM(
+                                  boxno: cashboxsetM?.id,
+                                  docno: mydocno,
+                                  docdate: DateTime.tryParse(head.date ?? '') ??
+                                      DateTime.now(),
+                                  disc: "دفعة ",
+                                  credit: paidVal,
+                                  debit: 0,
+                                  lastb: (b!) + (paidVal ?? 0),
+                                  idsys: 0
+                                // custemail: email.text
+                              ));
+                              CustDropDown?.supbal =
+                              (remain + (_SupptraVm.lctrsM?.lastb ?? 0));
+
+                              await SuppVm.EditSupplier(CustDropDown?.code ?? 0,
+                                  CustDropDown ?? SubSetupsM());
+                              for (ItemsInInv inv in items ?? []) {
+                                await _PoRefdetVm.CreateInvoice(PoRefdetsM(
+                                  id: 0,
+                                  invno:
+                                  ((_PoRefhdrVm.Invoises?.last.invno ?? 0) + 1),
+                                  e_id: inv.barId,
+                                  e_disc: inv.itemName,
+                                  e_price: inv.price,
+                                  e_qty: double.tryParse(inv.qty.toString()) ?? 0,
+                                  e_tot: inv.totalPrice,
+                                  storid: InvoiceHelper.storid,
+                                  e_sale: account_vm.user?.username,
+                                  e_disco: 0,
+                                  e_discprec: 0,
+                                  e_tax: 0,
+                                  itax: 0,
+                                  poprice: 0,
+                                ));
+                                var ittranlastb =
+                                await _ittranVm.losttSearchBySerial(
+                                    inv.barId.toString(), InvoiceHelper.storid);
+                                var d = _ittranVm.lostsM?.bal ?? 0;
+                                print("ittrans last bal $d");
+                                var a = inv.qty;
+                                var c = d + (a ?? 0);
+                                try {
+                                  var statusCode = await _ittranVm.Createrec(
+                                      IttransM(
+                                          id: 0,
+                                          invno:
+                                          ((_PoRefhdrVm.Invoises?.last.invno ??
+                                              0) +
+                                              1),
+                                          itbar: inv.barId.toString(),
+                                          itdisc: inv.itemName,
+                                          invdate: DateTime.now(),
+                                          note: 'فاتورة مرتد مشتريات',
+                                          sitqty: 0,
+                                          itqty: double.parse(inv.qty.toString()),
+                                          itpo: 0,
+                                          storid: InvoiceHelper.storid,
+                                          bal: c));
+                                } catch (err) {
+                                  print(err);
+                                }
+                                inv.item?.bal = c;
+                                await _itStorVM.EditItem(
+                                    inv.item?.sitemid ?? 0, inv.item ?? ItstorM());
+                              }
+                            }
+                          }else{
+                            print(account_vm.user?.cashbox ?? '');
+
+                            print(head.storid);
+                            print('done');
+                            var cashboxsetM = await _boxsetVm
+                                .findboxbyname(account_vm.userCash.toString());
+                            var boxtrlastb = await _boxtraVm
+                                .losttSearchBySerial(cashboxsetM?.id ?? 0);
+                            var b = _boxtraVm.lostsM?.lastb;
+                            await _PoRefhdrVm.CreateInvoice(PoRefhdrsM(
+                              name: head.name,
+                              invno: 0,
+                              invdate: DateTime.tryParse(head.date ?? '') ??
+                                  DateTime.now(),
+                              invtot: head.total,
+                              salesman: head.salesman,
+                              storid: head.storid,
+                              vatpo: 0,
+                              stat: 0,
+                              dayno: 0,
+                              discount: 0,
+                            ));
+                            await _SupptraVm.CreateCustomertra(SuptrasM(
+                              id: 0,
+                              supid: CustDropDown?.code,
+                              disc: "فاتورة مرتد مشتريات",
+                              credit: paidVal ?? 0,
+                              debit: totalprice,
+                              docno:
+                              ((_PoRefhdrVm.Invoises?.last.invno ?? 0) + 1),
+                              lastb: ((_SupptraVm.lctrsM?.lastb ?? 0) - remain),
+                              docdate: DateTime.tryParse(head.date ?? '') ??
+                                  DateTime.now(),
+                            ));
+                            var mydocno = _boxtraVm.lostsM?.docno;
+                            mydocno = (mydocno! + 1);
+                            var statusCode = await _boxtraVm.Createrec(BoxtransM(
+                                boxno: cashboxsetM?.id,
+                                docno: mydocno,
+                                docdate: DateTime.tryParse(head.date ?? '') ??
+                                    DateTime.now(),
+                                disc: "دفعة ",
+                                credit: remain,
+                                debit: 0,
+                                lastb: (b!) + (paidVal ?? 0),
+                                idsys: 0
+                              // custemail: email.text
+                            ));
+                            CustDropDown?.supbal =
+                            (remain + (_SupptraVm.lctrsM?.lastb ?? 0));
+
+                            await SuppVm.EditSupplier(CustDropDown?.code ?? 0,
+                                CustDropDown ?? SubSetupsM());
+                            for (ItemsInInv inv in items ?? []) {
+                              await _PoRefdetVm.CreateInvoice(PoRefdetsM(
+                                id: 0,
+                                invno:
+                                ((_PoRefhdrVm.Invoises?.last.invno ?? 0) + 1),
+                                e_id: inv.barId,
+                                e_disc: inv.itemName,
+                                e_price: inv.price,
+                                e_qty: double.tryParse(inv.qty.toString()) ?? 0,
+                                e_tot: inv.totalPrice,
+                                storid: InvoiceHelper.storid,
+                                e_sale: account_vm.user?.username,
+                                e_disco: 0,
+                                e_discprec: 0,
+                                e_tax: 0,
+                                itax: 0,
+                                poprice: 0,
+                              ));
+                              var ittranlastb =
+                              await _ittranVm.losttSearchBySerial(
+                                  inv.barId.toString(), InvoiceHelper.storid);
+                              var d = _ittranVm.lostsM?.bal ?? 0;
+                              print("ittrans last bal $d");
+                              var a = inv.qty;
+                              var c = d + (a ?? 0);
+                              try {
+                                var statusCode = await _ittranVm.Createrec(
+                                    IttransM(
+                                        id: 0,
+                                        invno:
+                                        ((_PoRefhdrVm.Invoises?.last.invno ??
+                                            0) +
+                                            1),
+                                        itbar: inv.barId.toString(),
+                                        itdisc: inv.itemName,
+                                        invdate: DateTime.now(),
+                                        note: 'فاتورة مرتد مشتريات',
+                                        sitqty: 0,
+                                        itqty: double.parse(inv.qty.toString()),
+                                        itpo: 0,
+                                        storid: InvoiceHelper.storid,
+                                        bal: c));
+                              } catch (err) {
+                                print(err);
+                              }
+                              inv.item?.bal = c;
+                              await _itStorVM.EditItem(
+                                  inv.item?.sitemid ?? 0, inv.item ?? ItstorM());
+                            }
+                          }
+
+
+                          Navigator.of(context).pop();
+                        }
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      },
+                      child: Text('حفظ')),
+                ),
+              )
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final _SupptraVm = Provider.of<SupptrarVM>(context, listen: false);
+    var _boxtraVm = Provider.of<BoxtransVM>(context, listen: false);
+    var _poRefhdrVm = Provider.of<PoRefhdrVM>(context, listen: false);
+    var account_vm = Provider.of<AccountVM>(context, listen: false);
+    var _subSetup_Vm = Provider.of<SupSetupsVM>(context, listen: false);
+    var _poRefdetsVm = Provider.of<PoRefdetsVM>(context, listen: false);
+    var _ittranVm = Provider.of<IttranVM>(context, listen: false);
+    var _itstorVm = Provider.of<ItstorVM>(context, listen: false);
+    head.salesman = account_vm.user?.username;
     var landingInex = 0;
-    var currentAppBarText = ['فاتورة مشتريات'];
-    return MainContainer(
-        widget: Scaffold(
+    var currentAppBarText = ['فاتورة مرتجع'];
+    return Container(
+        color: Color.fromRGBO(240, 240, 240, 1),
+        child: Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: CustomAppBar3(currentAppBarText[landingInex], context, [
-            IconButton(onPressed: (){
-              setState(() {
-                for(MapEntry<int,ItemsInInv> i in SelectedItem.entries){
-                  totalprice -= (i.value.totalPrice??0);
-                  items?.remove(i.value);
-                  SelectedItemColor.removeLast();
-                }
-                SelectedItemColor.fillRange(0, items!.length,Colors.white);
-                SelectedItem.clear();
-              });
-            }, icon: Icon(Icons.remove)),
+            IconButton(
+                onPressed: () {
+                  setState(() {
+                    for (MapEntry<int, ItemsInInv> i in SelectedItem.entries) {
+                      totalprice -= (i.value.totalPrice ?? 0);
+                      items?.remove(i.value);
+                      SelectedItemColor.removeLast();
+                    }
+                    SelectedItemColor.fillRange(0, items!.length, Colors.white);
+                    SelectedItem.clear();
+                  });
+                },
+                icon: Icon(Icons.remove)),
           ]),
-          bottomNavigationBar: PreferredSize(preferredSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.07),
+          bottomNavigationBar: PreferredSize(
+            preferredSize:
+                Size.fromHeight(MediaQuery.of(context).size.height * 0.07),
             child: Container(
               decoration: BoxDecoration(
-                border:Border.all(color: Colors.black,style: BorderStyle.solid),
+                border:
+                    Border.all(color: Colors.black, style: BorderStyle.solid),
                 borderRadius: BorderRadius.circular(10),
                 color: Colors.white,
               ),
@@ -370,7 +1144,8 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                   hintStyle: TextStyle(),
                   enabled: false,
                   hintText: totalprice.toString(),
-                ),),
+                ),
+              ),
             ),
           ),
           body: Directionality(
@@ -390,120 +1165,178 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                         children: [
                           Container(
                             width: 50,
-                            margin: EdgeInsets.only(top: 15,right: 15,bottom: 15),
+                            margin:
+                                EdgeInsets.only(top: 15, right: 15, bottom: 15),
                             decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(40)
-                            ),
-                            child: IconButton(onPressed: (){
-                              setState(() {
-                                viewHeader = viewHeader == false;
-                                percent = percent == 0.62? 0.25:0.62;
-                              });
-                            }, icon: Icon(Icons.view_headline_outlined,color: Colors.black,)),
+                                borderRadius: BorderRadius.circular(40)),
+                            child: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    viewHeader = viewHeader == false;
+                                    percent = percent == 0.62 ? 0.25 : 0.62;
+                                  });
+                                },
+                                icon: Icon(
+                                  Icons.view_headline_outlined,
+                                  color: Colors.black,
+                                )),
                           ),
                         ],
                       ),
                       viewHeader == true
                           ? Container(
-                        margin: EdgeInsets.fromLTRB(5, 5, 5, 10),
-                        padding: EdgeInsets.only(left: 5, right: 5),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              style: BorderStyle.solid,
-                              color: Colors.black),
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                    margin: EdgeInsets.only(right: 10),
-                                    child: Text(
-                                      "رقم الفاتورة :",
-                                      style: TextStyle(fontSize: 20),
-                                    )),
-                                Container(
-                                  width: MediaQuery.of(context).size.width *
-                                      0.5,
-                                  margin: EdgeInsets.only(
-                                      top: 10,
-                                      bottom: 10,
-                                      left: 10,
-                                      right: 10),
-                                  padding: EdgeInsets.only(right: 10),
-                                  decoration: BoxDecoration(
-                                      color: Colors.grey,
-                                      borderRadius:
-                                      BorderRadius.circular(10)),
-                                  child:
-                                  SizedBox(height: 45, child: Container(width: MediaQuery.of(context).size.width * 0.5,
-                                      child: Center(child: Text("1",style: TextStyle(fontSize: 20),)))),
-                                ),
-                              ],
-                            ),
-                            CustomInputCalender(
-                              Icn: Icons.calendar_month_outlined,
-                              name: nme,
-                              controller: Date,
-                              color: clr,
-                              onTapDown: (down){
-                                setState(() {
-                                  clr = Colors.blue;
-                                });
-                              },
-                              onTap: () async{
-                                selectedDate = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(1980), lastDate: DateTime.now());
-                                print(selectedDate ?? DateTime.now());
-                                setState((){
-                                  clr = Color.fromRGBO(240, 240, 240, 1);
-                                  nme = DateFormat('yyyy-MM-dd')
-                                      .format(selectedDate??DateTime.now());
-                                  Date = selectedDate ?? DateTime.now();
-                                });
-                              },
-                            ),
-                            CustomDropDownMenu(
-                                Left: 10,
-                                Right: 10,
-                                name: "إسم المخزن",
-                                value: stockName,
-                                Width: MediaQuery.of(context).size.width,
-                                items: [],
-                                fun: (String? val) {},
-                                circularity: 10),
-                            CustomDropDownMenu(
-                                Left: 10,
-                                Right: 10,
-                                name: "إسم المورد",
-                                value: sourceName,
-                                Width: MediaQuery.of(context).size.width,
-                                items: [],
-                                fun: (String? val) {
-                                  setState(() {
-                                  });
-                                },
-                                circularity: 10),
-                          ],
-                        ),
-                      )
+                              margin: EdgeInsets.fromLTRB(5, 5, 5, 10),
+                              padding: EdgeInsets.only(left: 5, right: 5),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                    style: BorderStyle.solid,
+                                    color: Colors.black),
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                          margin: EdgeInsets.only(right: 10),
+                                          child: Text(
+                                            "رقم الفاتورة :",
+                                            style: TextStyle(fontSize: 20),
+                                          )),
+                                      Container(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.5,
+                                        margin: EdgeInsets.only(
+                                            top: 10,
+                                            bottom: 10,
+                                            left: 10,
+                                            right: 10),
+                                        padding: EdgeInsets.only(right: 10),
+                                        decoration: BoxDecoration(
+                                            color: Colors.grey,
+                                            borderRadius:
+                                                BorderRadius.circular(10)),
+                                        child: SizedBox(
+                                            height: 45,
+                                            child: Container(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.5,
+                                                child: Center(
+                                                    child: Text(
+                                                  ((_poRefhdrVm.Invoises?.last
+                                                                      .invno ??
+                                                                  0) +
+                                                              1)
+                                                          .toString() ??
+                                                      '1',
+                                                  style:
+                                                      TextStyle(fontSize: 20),
+                                                )))),
+                                      ),
+                                    ],
+                                  ),
+                                  CustomInputCalender(
+                                    Icn: Icons.calendar_month_outlined,
+                                    name: nme,
+                                    controller: Date,
+                                    color: clr,
+                                    onTapDown: (down) {
+                                      setState(() {
+                                        clr = Colors.blue;
+                                      });
+                                    },
+                                    onTap: () async {
+                                      selectedDate = await showDatePicker(
+                                          context: context,
+                                          initialDate: DateTime.now(),
+                                          firstDate: DateTime(1980),
+                                          lastDate: DateTime.now());
+                                      print(selectedDate ?? DateTime.now());
+                                      setState(() {
+                                        clr = Color.fromRGBO(240, 240, 240, 1);
+                                        nme = DateFormat('yyyy-MM-dd').format(
+                                            selectedDate ?? DateTime.now());
+                                        Date = selectedDate ?? DateTime.now();
+                                        head.date = DateFormat('yyyy-MM-dd')
+                                            .format(
+                                                selectedDate ?? DateTime.now());
+                                      });
+                                    },
+                                  ),
+                                  CustomDropDownMenuSuppliers(
+                                      Left: 10,
+                                      Right: 10,
+                                      name: "إسم المورد",
+                                      value: CustDropDown,
+                                      Width: MediaQuery.of(context).size.width,
+                                      items: PurchasesHelper.Sppliers?.map((e) {
+                                        return DropdownMenuItem<SubSetupsM?>(
+                                          value: e,
+                                          child: Container(
+                                              width: MediaQuery.of(context)
+                                                  .size
+                                                  .width,
+                                              child: Center(
+                                                  child: Text(
+                                                e.supAname ?? "",
+                                                style: TextStyle(fontSize: 16),
+                                              ))),
+                                        );
+                                      }).toList(),
+                                      fun: (SubSetupsM? val) {
+                                        setState(() {
+                                          CustDropDown = val;
+                                          head.name = CustDropDown?.supAname;
+                                          head.storid = InvoiceHelper.storid;
+                                          print(CustDropDown?.code);
+                                        });
+                                      },
+                                      circularity: 10),
+                                  Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    height: 45,
+                                    margin: EdgeInsets.fromLTRB(10, 10, 10, 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: TextField(
+                                      keyboardType: TextInputType.text,
+                                      textAlign: TextAlign.center,
+                                      decoration: InputDecoration(
+                                        border: InputBorder.none,
+                                        hintStyle: TextStyle(),
+                                        enabled: false,
+                                        hintText: InvoiceHelper.user?.storid ??
+                                            "المخزن",
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
                           : Container(),
                       Container(
-                        height: MediaQuery.of(context).size.height*0.07,
+                        height: MediaQuery.of(context).size.height * 0.07,
                         width: MediaQuery.of(context).size.width,
-                        padding: EdgeInsets.only(left:5,right: 5 ),
+                        padding: EdgeInsets.only(left: 5, right: 5),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              flex:1,
+                              flex: 1,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  border:Border.all(color: Colors.black,style: BorderStyle.solid),
+                                  border: Border.all(
+                                      color: Colors.black,
+                                      style: BorderStyle.solid),
                                   borderRadius: BorderRadius.circular(10),
                                   color: Colors.white,
                                 ),
@@ -511,18 +1344,24 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                                   onPressed: () async {
                                     await DisplayItems();
                                   },
-                                  icon: Icon(Icons.add,color: Color.fromRGBO(60, 20, 12, 1.0),),),
+                                  icon: Icon(
+                                    Icons.add,
+                                    color: Colors.deepOrange,
+                                  ),
+                                ),
                               ),
                             ),
                             Expanded(
-                              flex:3,
+                              flex: 3,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  border:Border.all(color: Colors.black,style: BorderStyle.solid),
+                                  border: Border.all(
+                                      color: Colors.black,
+                                      style: BorderStyle.solid),
                                   borderRadius: BorderRadius.circular(10),
                                   color: Colors.white,
                                 ),
-                                child: TextField(
+                                child: const TextField(
                                   keyboardType: TextInputType.text,
                                   textAlign: TextAlign.center,
                                   decoration: InputDecoration(
@@ -530,40 +1369,37 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                                     border: InputBorder.none,
                                     hintStyle: TextStyle(),
                                     hintText: "إدخل إسم المنتج",
-                                  ),),
+                                  ),
+                                ),
                               ),
                             ),
-                            Expanded(
-                              flex:1,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border:Border.all(color: Colors.black,style: BorderStyle.solid),
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: Colors.white,
-                                ),
-                                child: IconButton(
-                                  onPressed: () async {
-                                    await barCodeReader();
-                                  },
-                                  icon: Icon(Icons.barcode_reader,color: Color.fromRGBO(60, 20, 12, 1.0),),),
-                              ),),
                           ],
                         ),
                       ),
                       Container(
                         margin: EdgeInsets.only(top: 7),
                         child: SizedBox(
-                          height: MediaQuery.of(context).size.height*percent!,
+                          height: MediaQuery.of(context).size.height * percent!,
                           child: ListView.builder(
                               itemCount: items?.length,
                               itemBuilder: (BuildContext context, int index) {
                                 return GestureDetector(
-                                  onTap: (){
+                                  onTap: () {
                                     setState(() {
-                                      Map<int,ItemsInInv> item= {index: items![index]};
+                                      Map<int, ItemsInInv> item = {
+                                        index: items![index]
+                                      };
                                       //print(item.entries.first.key);
-                                      SelectedItemColor[index] == Colors.white? SelectedItem.addEntries(item.entries): SelectedItem.remove(item.entries.first.key);
-                                      SelectedItemColor[index] = SelectedItemColor[index] == Colors.white? Colors.blue:Colors.white;
+                                      SelectedItemColor[index] == Colors.white
+                                          ? SelectedItem.addEntries(
+                                              item.entries)
+                                          : SelectedItem.remove(
+                                              item.entries.first.key);
+                                      SelectedItemColor[index] =
+                                          SelectedItemColor[index] ==
+                                                  Colors.white
+                                              ? Colors.blue
+                                              : Colors.white;
                                     });
                                     print(SelectedItem.length);
                                   },
@@ -573,35 +1409,49 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                                       child: Card(
                                         color: SelectedItemColor[index],
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Column(
                                               children: [
                                                 Row(
                                                   children: [
-                                                    Text("الكود : ",style: TextStyle(fontSize: 15),),
-                                                    Container(width: MediaQuery.of(context).size.width*0.35,
-                                                        child: SingleChildScrollView(scrollDirection: Axis.horizontal,
-                                                            child: Text("${items![index].itemBarcode}"))),
-                                                  ],
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Text("إسم المنتج : ",style: TextStyle(fontSize: 15),),
-                                                    Container(width: MediaQuery.of(context).size.width*0.25,
-                                                        child: SingleChildScrollView(scrollDirection: Axis.horizontal,
-                                                            child: Text("${items![index].itemName}"))),
-
-                                                  ],
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Text("سعر الوحدة : ",style: TextStyle(fontSize: 15),),
-                                                    Container(width: MediaQuery.of(context).size.width*0.25,
-                                                        child: SingleChildScrollView(scrollDirection: Axis.horizontal,
-                                                            child: Text("${items![index].price}")
-                                                        )
+                                                    Text(
+                                                      "إسم المنتج : ",
+                                                      style: TextStyle(
+                                                          fontSize: 15),
                                                     ),
+                                                    Container(
+                                                        width: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.25,
+                                                        child: SingleChildScrollView(
+                                                            scrollDirection:
+                                                                Axis.horizontal,
+                                                            child: Text(
+                                                                "${items![index].itemName}"))),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      "سعر الوحدة : ",
+                                                      style: TextStyle(
+                                                          fontSize: 15),
+                                                    ),
+                                                    Container(
+                                                        width: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.25,
+                                                        child: SingleChildScrollView(
+                                                            scrollDirection:
+                                                                Axis.horizontal,
+                                                            child: Text(
+                                                                "${items![index].price}"))),
                                                   ],
                                                 ),
                                               ],
@@ -610,37 +1460,46 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                                               children: [
                                                 Row(
                                                   children: [
-                                                    Text("الوحدة : ",style: TextStyle(fontSize: 15),),
-                                                    Container(width: MediaQuery.of(context).size.width*0.3,
-                                                        child: SingleChildScrollView(scrollDirection: Axis.horizontal,
-                                                            child: Text("${items![index].unit}"))),
-
+                                                    Text(
+                                                      "الكمية : ",
+                                                      style: TextStyle(
+                                                          fontSize: 15),
+                                                    ),
+                                                    Container(
+                                                        width: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.3,
+                                                        child: SingleChildScrollView(
+                                                            scrollDirection:
+                                                                Axis.horizontal,
+                                                            child: Text(
+                                                                "${items![index].qty}"))),
                                                   ],
                                                 ),
                                                 Row(
                                                   children: [
-                                                    Text("الكمية : ",style: TextStyle(fontSize: 15),),
-                                                    Container(width: MediaQuery.of(context).size.width*0.3,
-                                                        child: SingleChildScrollView(scrollDirection: Axis.horizontal,
-                                                            child: Text("${items![index].qty}")
-                                                        )
+                                                    Text(
+                                                      "الإجمالي : ",
+                                                      style: TextStyle(
+                                                          fontSize: 15),
                                                     ),
-                                                  ],
-                                                ),
-                                                Row(
-                                                  children: [
-                                                    Text("الإجمالي : ",style: TextStyle(fontSize: 15),),
-                                                    Container(width: MediaQuery.of(context).size.width*0.3,
-                                                        child: SingleChildScrollView(scrollDirection: Axis.horizontal,
-                                                            child: Text("${items![index].totalPrice}")
-                                                        )
-                                                    ),
+                                                    Container(
+                                                        width: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.3,
+                                                        child: SingleChildScrollView(
+                                                            scrollDirection:
+                                                                Axis.horizontal,
+                                                            child: Text(
+                                                                "${items![index].totalPrice}"))),
                                                   ],
                                                 ),
                                               ],
                                             ),
-
-
                                           ],
                                         ),
                                       ),
@@ -654,11 +1513,31 @@ class _ReturnInvoiceState extends State<ReturnInvoice> {
                   ),
                 ),
               ),
-              floatingActionButton: FloatingActionButton(onPressed: () {  },
+              floatingActionButton: FloatingActionButton(
+                onPressed: () async {
+                  showDialog(
+                      context: context,
+                      builder: (context) {
+                        return const Center(child: CircularProgressIndicator());
+                      });
+                  await SavingInvoice(
+                      _poRefhdrVm,
+                      _subSetup_Vm,
+                      _SupptraVm,
+                      _boxtraVm,
+                      account_vm,
+                      _poRefdetsVm,
+                      _ittranVm,
+                      _itstorVm);
+                  Navigator.pop(context);
+                },
                 elevation: 20,
                 backgroundColor: Colors.white,
                 child: Container(
-                    child: Icon(Icons.save,color: Colors.blue,)),
+                    child: Icon(
+                  Icons.save,
+                  color: Colors.blue,
+                )),
               ),
             ),
           ),
@@ -671,6 +1550,16 @@ class ItemsInInv {
   String? itemBarcode;
   String? unit;
   int? qty;
+  int? barId;
   double? price;
   double? totalPrice;
+  ItstorM? item;
+}
+
+class header {
+  String? date;
+  String? name;
+  String? salesman;
+  int? storid;
+  double? total;
 }

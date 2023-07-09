@@ -15,6 +15,12 @@ class ItstorVM extends ChangeNotifier{
     notifyListeners();
     return res;
   }
+  Future<List<ItstorM>?> GetItemsByStoreId(int StoreId)async{
+    var res= await accountReptra.GetItemsByStoreId(StoreId);
+    items = res;
+    notifyListeners();
+    return res;
+  }
 Future<void> losttSearchBySerial(String mid, int storid)async{
 
     var res=await accountReptra.losttSearchBySerial(mid);

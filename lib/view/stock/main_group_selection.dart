@@ -65,17 +65,14 @@ class _MainGroupSelectionState extends State<MainGroupSelection> {
                   value: null,
                   name: "إختر قسم رئيسي",
                   Width: MediaQuery.of(context).size.width,
-                  fun: (String? newValue) {
-                    setState(() {
+                  fun: (String? newValue) async{
+                    await _groupSub_Vm.GetSubGroups(newValue??'');
+                    setState((){
                       print(newValue);
                       MainGroupName = newValue.toString();
                       StorTypeHelper.TempSubGroups = [];
-                      StorTypeHelper.mainGroupVal = newValue;
-                      for(GroubItSubsM v in _groupSub_Vm.groups??[]){
-                        if(v.gitemmain == newValue){
-                          StorTypeHelper.TempSubGroups?.add(v);
-                        }
-                      }
+                      StorTypeHelper.TempSubGroups = _groupSub_Vm.groups;
+                      StorTypeHelper.mainGroupVal = MainGroupName;
                     });
                     Navigation.puchNav(SubGroups(), context);
                    },

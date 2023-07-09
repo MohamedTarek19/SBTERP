@@ -157,14 +157,14 @@ class _TypesStockState extends State<TypesStock> {
       }
     }
   }
-  void FilterItems(){
-    filteredItems!.clear();
-    for(ItstorM val in StorTypeHelper.StoreItems??[]){
-      if(val.storid == store!.id){
-        filteredItems!.add(val);
-      }
-    }
-  }
+  // void FilterItems(){
+  //   filteredItems!.clear();
+  //   for(ItstorM val in StorTypeHelper.StoreItems??[]){
+  //     if(val.storid == store!.id){
+  //       filteredItems!.add(val);
+  //     }
+  //   }
+  // }
   AddingMessage(GroubItSubsVM _GroupSubs_Vm,ItstorVM _Itstor_Vm) async {
     reset();
     _Image = null;
@@ -195,12 +195,15 @@ class _TypesStockState extends State<TypesStock> {
                     CustomDropDownMenu(
                         Width: MediaQuery.of(context).size.width,
                         value: MainGroup,
-                        fun: (String? val) {
+                        fun: (String? val) async {
+                          showDialog(context: context, builder: (context) {return const Center(child: CircularProgressIndicator());});
                           subGroup = null;
+                          await _GroupSubs_Vm.GetSubGroups(val??'');
                           setState(() {
                             MainGroup = val.toString();
-                            FilterSubGroups(_GroupSubs_Vm);
+                            StorTypeHelper.TempSubGroups = _GroupSubs_Vm.groups;
                           });
+                          Navigator.pop(context);
                         },
                         items: StorTypeHelper.MainGroups?.map((item) {
                           return DropdownMenuItem(
@@ -586,14 +589,14 @@ class _TypesStockState extends State<TypesStock> {
                         sitemqty: int.tryParse(Quantity.text),
                         sitemunit: "قطعة",
                     );
-                    print("${item.sitemid}\n${item.gitemsubid}\n${item.gitemid}\n${item.sitemqty}\n${item.discprec}\n${item.disc}\n"
-                        "${item.itsop}\n${item.itso}\n${item.itsos}\n${item.itpo}\n${item.sitbarcode}\n${item.sitemdisc}\n${item.storid}\n"
-                        "${item.sitemunit}\n${item.itservice}\n${item.bal}\n");
+                    // print("${item.sitemid}\n${item.gitemsubid}\n${item.gitemid}\n${item.sitemqty}\n${item.discprec}\n${item.disc}\n"
+                    //     "${item.itsop}\n${item.itso}\n${item.itsos}\n${item.itpo}\n${item.sitbarcode}\n${item.sitemdisc}\n${item.storid}\n"
+                    //     "${item.sitemunit}\n${item.itservice}\n${item.bal}\n");
                     await _Itstor_Vm.CreateItem(item);
-                    await _Itstor_Vm.GetAllItems();
+                    await _Itstor_Vm.GetItemsByStoreId(store?.id ?? 0);
                     setState(() {
                       StorTypeHelper.StoreItems = _Itstor_Vm.items;
-                      FilterItems();
+                      filteredItems = _Itstor_Vm.items;
                     });
                     Navigator.of(context).pop();
                     Navigator.of(context).pop();
@@ -629,10 +632,9 @@ class _TypesStockState extends State<TypesStock> {
                   onPressed: () async {
                     showDialog(context: context, builder: (context) {return const Center(child: CircularProgressIndicator());});
                     await _Itstor_Vm.deleteItem(id);
+                    await _Itstor_Vm.GetItemsByStoreId(store?.id ?? 0);
                     setState(() {
-                      filteredItems!.remove(item);
-                      StorTypeHelper.StoreItems!.remove(item);
-                      FilterItems();
+                      filteredItems = _Itstor_Vm.items;
                     });
                     Navigator.of(context).pop();
                     Navigator.of(context).pop();
@@ -1141,12 +1143,21 @@ class _TypesStockState extends State<TypesStock> {
               child: CustomDropDownMenuForObjects(
                   Width: MediaQuery.of(context).size.width,
                   value: store,
-                  fun: (StortypeM? val) {
+                  fun: (StortypeM? val) async {
+                    showDialog(context: context, builder: (
+                        context) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    });
+                    await _Itstor_Vm.GetItemsByStoreId(val?.id ?? 0);
                     setState(() {
                       store = val;
-                      FilterItems();
                       print(val!.id);
+                      StorTypeHelper.StoreItems = _Itstor_Vm.items;
+                      filteredItems = _Itstor_Vm.items;
+                      print(_Itstor_Vm.items?.length);
                     });
+                    Navigator.pop(context);
                   },
                   items: StorTypeHelper.stores?.map((item) {
                     return DropdownMenuItem(
@@ -1211,7 +1222,7 @@ class _TypesStockState extends State<TypesStock> {
                                               mainAxisAlignment:
                                               MainAxisAlignment.center,
                                               children: [
-                                                Text(filteredItems![index].sitemdisc ?? 'فارغ'),
+                                                Text(filteredItems?[index].sitemdisc ?? 'فارغ'),
                                               ],
                                             ),
                                             trailing: Icon(Icons.list),

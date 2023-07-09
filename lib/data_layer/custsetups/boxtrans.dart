@@ -23,7 +23,7 @@ class AccountRep {
   }
   Future<BoxtransM?> losttSearchBySerial(int code) async{
     try{
-      var url=Uri.parse("https://mobapi.teletech-egypt.com/api/boxtrans/$code");
+      var url=Uri.parse("${Apis.baseUrl}${Apis.boxtrans}/$code");
 
       var response=await http.get(url,
           headers:{ 'Accept':'application/json'

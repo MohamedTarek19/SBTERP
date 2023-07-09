@@ -24,6 +24,12 @@ class Apis {
  static const String supsetups = "supsetups";
  static const String sorefhdrs = "sorefhdrs";
  static const String sorefdets = "sorefdets";
+ static const String porefhdrs = 'porefhdrs';
+ static const String porefdets = 'porefdets';
+ static const String suptras = "suptras";
+ static const String tblsetts = "tblsetts";
+ static const String pohdrs = "pohdrs";
+ static const String podets = "podets";
 
 
 }

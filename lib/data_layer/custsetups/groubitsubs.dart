@@ -28,12 +28,30 @@ class GroubItSubsRepository {
       throw Exception(err);
     }
   }
+  Future<List<GroubItSubsM>?> GetSubGroups(String mainGroup) async {
+    try {
+      var url = Uri.parse("${Apis.baseUrl}${Apis.groubitsubs}/$mainGroup");
+print("${Apis.baseUrl}${Apis.groubitsubs}/$mainGroup");
+      var response =
+      await http.get(url, headers: {'Accept': 'application/json'});
+      if (response.statusCode == 200) {
+        var res = jsonDecode(response.body) as List;
+        var d = res.map((e)=>GroubItSubsM.formJson(e)).toList();
+        return d;
+      }
+      return null;
+    } on Exception catch (err) {
+      print(err.toString());
+      throw Exception(err);
+    }
+  }
 
   Future<Object> AddGroup(GroubItSubsM groupS) async {
     try {
       var url = Uri.parse(Apis.baseUrl + Apis.groubitsubs);
       var response = await http.post(url,
           body: groupS.toJson(), headers: {'Accept': 'application/json'});
+      print("adding sub group res = ${response.statusCode}");
       if (response.statusCode == 20) {
         return response.statusCode;
       }

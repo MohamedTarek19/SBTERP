@@ -144,7 +144,6 @@ class StockHome extends StatelessWidget {
                       StorTypeHelper.StoreItems = _Itstor_Vm.items;
                       await _GroupSet_Vm.GetAllGroups();
                       StorTypeHelper.MainGroups = _GroupSet_Vm.groups;
-                      await _GroupSubs_Vm.GetAllGroups();
                       Navigator.pop(context);
                       Navigation.puchNav(TypesStock(), context);
                     },

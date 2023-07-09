@@ -5,10 +5,14 @@ import 'package:sbterp/business_logic/view_model/empsetup_vm.dart';
 import 'package:sbterp/business_logic/view_model/groubitemsetups_vm.dart';
 import 'package:sbterp/business_logic/view_model/groubitsubs_vm.dart';
 import 'package:sbterp/business_logic/view_model/itstor_vm.dart';
+import 'package:sbterp/business_logic/view_model/porefdets_vm.dart';
+import 'package:sbterp/business_logic/view_model/porefhdrs_vm.dart';
 import 'package:sbterp/business_logic/view_model/poreqhdr_vm.dart';
 import 'package:sbterp/business_logic/view_model/sohdr_vm.dart';
 import 'package:sbterp/business_logic/view_model/sorefdets_vm.dart';
 import 'package:sbterp/business_logic/view_model/subsetups_vm.dart';
+import 'package:sbterp/business_logic/view_model/suptras_vm.dart';
+import 'package:sbterp/business_logic/view_model/tblsetts_vm.dart';
 import 'package:sbterp/theme/appthrmr.dart';
 import 'package:sbterp/view/home.dart';
 import 'package:sbterp/view/loginscreen.dart';
@@ -55,13 +59,17 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => IttranVM()),
         ChangeNotifierProvider(create: (context) => PoreqhdrVM()),
         ChangeNotifierProvider(create: (context) => PoreqdetVM()),
-        ChangeNotifierProvider(create: (context)=> GroupItemSetupsVM()),
-        ChangeNotifierProvider(create: (context)=> GroubItSubsVM()),
-        ChangeNotifierProvider(create: (context)=> CitySetsVM()),
-        ChangeNotifierProvider(create: (context)=> EmpVM()),
-        ChangeNotifierProvider(create: (context)=> SupSetupsVM()),
-        ChangeNotifierProvider(create: (context)=> SoRefhdrVM()),
-        ChangeNotifierProvider(create: (context)=>SoRefdetsVM()),
+        ChangeNotifierProvider(create: (context)=>  GroupItemSetupsVM()),
+        ChangeNotifierProvider(create: (context)=>  GroubItSubsVM()),
+        ChangeNotifierProvider(create: (context)=>  CitySetsVM()),
+        ChangeNotifierProvider(create: (context)=>  EmpVM()),
+        ChangeNotifierProvider(create: (context)=>  SupSetupsVM()),
+        ChangeNotifierProvider(create: (context)=>  SoRefhdrVM()),
+        ChangeNotifierProvider(create: (context)=>  SoRefdetsVM()),
+        ChangeNotifierProvider(create: (context)=>  PoRefhdrVM()),
+        ChangeNotifierProvider(create: (context)=>  PoRefdetsVM()),
+        ChangeNotifierProvider(create: (context)=>  SupptrarVM()),
+        ChangeNotifierProvider(create: (context)=>  TblSetTsVM()),
       ],
       child:  MaterialApp(
         debugShowCheckedModeBanner: false,

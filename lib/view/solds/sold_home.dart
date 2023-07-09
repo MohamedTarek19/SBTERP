@@ -83,12 +83,8 @@ class SoldHome extends StatelessWidget {
                           StortypeM? storid = await _storTypes.findstorbyname(InvoiceHelper.user?.storid??'');
                           InvoiceHelper.storid = storid?.id??0;
                           print(InvoiceHelper.storid);
-                          for(ItstorM s in _itstorVm.items??[]){
-                            //print("${s.storid.toString().trim()} , ${storid?.id}");
-                            if(s.storid == storid?.id){
-                              InvoiceHelper.items?.add(s);
-                            }
-                          }
+                          await _itstorVm.GetItemsByStoreId(InvoiceHelper.storid);
+                          InvoiceHelper.items = _itstorVm.items;
                           var _sohdrVm = Provider.of<SohdrVM>(context,listen: false);
                           await _sohdrVm.GetSohdrs();
                           print(InvoiceHelper.items?.length);
@@ -124,12 +120,10 @@ class SoldHome extends StatelessWidget {
                           StortypeM? storid = await _storTypes.findstorbyname(InvoiceHelper.user?.storid??'');
                           InvoiceHelper.storid = storid?.id??0;
                           print(InvoiceHelper.storid);
-                          for(ItstorM s in _itstorVm.items??[]){
-                            //print("${s.storid.toString().trim()} , ${storid?.id}");
-                            if(s.storid == storid?.id){
-                              InvoiceHelper.items?.add(s);
-                            }
-                          }
+
+                          await _itstorVm.GetItemsByStoreId(InvoiceHelper.storid);
+                          InvoiceHelper.items = _itstorVm.items;
+
                           var _soRefhdrVm = Provider.of<SoRefhdrVM>(context,listen: false);
                           await _soRefhdrVm.GetSohdrs();
                           print(InvoiceHelper.items?.length);

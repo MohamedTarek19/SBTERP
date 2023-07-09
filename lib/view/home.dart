@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'package:flutter/material.dart';
+import 'package:sbterp/business_logic/view_model/tblsetts_vm.dart';
 import 'package:sbterp/view/accounts/accounts_landing.dart';
 import 'package:sbterp/view/backline/backline_landing.dart';
 import 'package:sbterp/view/employees/employees_landing.dart';
@@ -14,7 +15,6 @@ import 'package:provider/provider.dart';
 import '../../utils/navigation.dart';
 import '../../widgets/service_widget.dart';
 
-
 import '../business_logic/view_model/account_vm.dart';
 import '../business_logic/view_model/boxtrans_vm.dart';
 import '../business_logic/view_model/cashboxset_vm.dart';
@@ -28,144 +28,170 @@ class Homescreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var account_vm = Provider.of<AccountVM>(context);
-    var _boxtraVm = Provider.of<BoxtransVM>(context,listen: false);
-    var _boxsetVm = Provider.of<CashboxsetVM>(context,listen: false);
-    return   Scaffold(
-        body: Stack(children: [
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/Backkground.jpg"),
-                fit: BoxFit.cover,
-              ),
+    var _boxtraVm = Provider.of<BoxtransVM>(context, listen: false);
+    var _boxsetVm = Provider.of<CashboxsetVM>(context, listen: false);
+    final _TblSets = Provider.of<TblSetTsVM>(context, listen: false);
+    print(_TblSets.tbls!.last.sim);
+    return Scaffold(
+        body: Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/Backkground.jpg"),
+              fit: BoxFit.cover,
             ),
           ),
-
+        ),
         SingleChildScrollView(
-
-      padding: EdgeInsets.only(top:30.0),
-
-        child: Column(
-
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children:   [
-              ServiceWidget(
-                imahePath: "assets/So.png",
-                //   name: "Hi,${account_vm.userDetails ?? '...'}",
-                name: "",
-                action: (){
-                  Navigation.puchNav(const SoldLanding(), context);
-
-
-
-                },
-              ),
-              ServiceWidget(
-                imahePath: "assets/Po.png",
-                name: "",
-                action: (){
-                  Navigation.puchNav(const PurchasesLanding(), context);
-
-                },
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          padding: EdgeInsets.only(top: 30.0),
+          child: Column(
             children: [
-              ServiceWidget(
-                imahePath: "assets/St.png",
-                name: "",
-                action: () {
-                  Navigation.puchNav(StockLanding(), context);
-
-                },
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ServiceWidget(
+                    imahePath: "assets/So.png",
+                    //   name: "Hi,${account_vm.userDetails ?? '...'}",
+                    name: "",
+                    action: () {
+                      Navigation.puchNav(const SoldLanding(), context);
+                    },
+                  ),
+                  ServiceWidget(
+                    imahePath: "assets/Po.png",
+                    name: "",
+                    action: () {
+                      Navigation.puchNav(const PurchasesLanding(), context);
+                    },
+                  ),
+                ],
               ),
-              ServiceWidget(
-                imahePath: "assets/Emp.png",
-                name: "",
-                action: () {
-                 Navigation.puchNav(const EmployeesLanding(), context);
-
-                },
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ServiceWidget(
+                    imahePath: "assets/St.png",
+                    name: "",
+                    action: () {
+                      Navigation.puchNav(StockLanding(), context);
+                    },
+                  ),
+                  ServiceWidget(
+                    imahePath: "assets/Emp.png",
+                    name: "",
+                    action: () {
+                      Navigation.puchNav(const EmployeesLanding(), context);
+                    },
+                  ),
+                ],
               ),
+              _TblSets.tbls!.last.sim == true
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ServiceWidget(
+                          imahePath: "assets/Acc.png",
+                          name: "",
+                          action: () {
+                            Navigation.puchNav(
+                                const AccountsLanding(), context);
+                          },
+                        ),
+                        ServiceWidget(
+                          imahePath: "assets/blackline.png",
+                          name: "",
+                          action: () async {
+                            Navigation.puchNav(BackLineLanding(), context);
+                            // var cashboxsetM = await _boxsetVm
+                            //     .findboxbyname(
+                            //     account_vm.userCash
+                            //         .toString());
+                            // if (cashboxsetM != null) {
+                            //   var boxtrlastb = await _boxtraVm.losttSearchBySerial(cashboxsetM.id!);
+                            // }
+                            //     Navigation.puchNav(const Boxtransfer(), context);
+                          },
+                        ),
+                      ],
+                    )
+                  : Container(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigation.puchNav(
+                                    const AccountsLanding(), context);
+                              },
+                              child: Container(
+                                margin: AppTheme.marginall,
+                                padding: AppTheme.paddingall,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                        AppTheme.borderradiu3),
+                                    border: Border.all(
+                                        color: AppTheme.mainColor, width: 1)),
+                                child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        "assets/Acc.png",
+                                        height: 125,
+                                        width: 600,
+                                        fit: BoxFit.scaleDown,
+                                      ),
+                                    ]),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //   children: [
+              //     // ServiceWidget(
+              //     //   imahePath: "assets/Mandop.png",
+              //     //   name: "",
+              //     //   action: () {
+              //     //
+              //     //  //   Navigation.puchNav(const Stock(), context);
+              //     //
+              //     //   },
+              //     // ),
+              //     // ServiceWidget(
+              //     //   imahePath: "assets/prem.png",
+              //     //   name: "",
+              //     //   action: () {
+              //     //  //   Navigation.puchNav(const Searcrec(), context);
+              //     //
+              //     //   },
+              //     // ),
+              //   ],
+              // ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //   children: [
+              //     ServiceWidget(
+              //       imahePath: "assets/about.png",
+              //       name: "عن الشركة",
+              //       action: () {
+              //         // CSnackBar.showSnackBar(
+              //         //     context, "تم اغلاق الجولة بنجاح");
+              //         Navigation.puchNav(const LoginScreen(), context);
+              //
+              //       },
+              //     ),
+              //
+              //   ],
+              // ),
             ],
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-
-              ServiceWidget(
-                imahePath: "assets/Acc.png",
-                name: "",
-                action: () {
-                 Navigation.puchNav(const AccountsLanding(), context);
-
-                },
-              ),
-              ServiceWidget(
-                imahePath: "assets/blackline.png",
-                name: "",
-                action: () async {
-                  Navigation.puchNav(BackLineLanding(), context);
-                  // var cashboxsetM = await _boxsetVm
-                  //     .findboxbyname(
-                  //     account_vm.userCash
-                  //         .toString());
-                  // if (cashboxsetM != null) {
-                  //   var boxtrlastb = await _boxtraVm.losttSearchBySerial(cashboxsetM.id!);
-                  // }
-             //     Navigation.puchNav(const Boxtransfer(), context);
-                },
-              ),
-            ],
-          ),
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //   children: [
-          //     // ServiceWidget(
-          //     //   imahePath: "assets/Mandop.png",
-          //     //   name: "",
-          //     //   action: () {
-          //     //
-          //     //  //   Navigation.puchNav(const Stock(), context);
-          //     //
-          //     //   },
-          //     // ),
-          //     // ServiceWidget(
-          //     //   imahePath: "assets/prem.png",
-          //     //   name: "",
-          //     //   action: () {
-          //     //  //   Navigation.puchNav(const Searcrec(), context);
-          //     //
-          //     //   },
-          //     // ),
-          //   ],
-          // ),
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //   children: [
-          //     ServiceWidget(
-          //       imahePath: "assets/about.png",
-          //       name: "عن الشركة",
-          //       action: () {
-          //         // CSnackBar.showSnackBar(
-          //         //     context, "تم اغلاق الجولة بنجاح");
-          //         Navigation.puchNav(const LoginScreen(), context);
-          //
-          //       },
-          //     ),
-          //
-          //   ],
-          // ),
-        ],
-      ),
-
-
-          ),
-        ],)
-        );
+        ),
+      ],
+    ));
   }
 }

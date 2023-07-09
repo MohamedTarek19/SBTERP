@@ -1,6 +1,14 @@
 import 'dart:ffi';
 import 'package:flutter/material.dart';
+import 'package:sbterp/business_logic/model/itstor_m.dart';
+import 'package:sbterp/business_logic/model/stortype_m.dart';
+import 'package:sbterp/business_logic/view_model/account_vm.dart';
+import 'package:sbterp/business_logic/view_model/itstor_vm.dart';
+import 'package:sbterp/business_logic/view_model/porefdets_vm.dart';
+import 'package:sbterp/business_logic/view_model/porefhdrs_vm.dart';
+import 'package:sbterp/business_logic/view_model/stortype_vm.dart';
 import 'package:sbterp/business_logic/view_model/subsetups_vm.dart';
+import 'package:sbterp/view/invoice_helper.dart';
 import 'package:sbterp/view/purchases/purchases_helper.dart';
 import 'package:sbterp/view/purchases/purchases_invoice.dart';
 import 'package:sbterp/view/purchases/reports/reports.dart';
@@ -21,6 +29,7 @@ class PurchasesHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var account_vm = Provider.of<AccountVM>(context,listen: false);
     var _subSetup_Vm = Provider.of<SupSetupsVM>(context,listen: false);
     return Scaffold(
         body: Stack(
@@ -50,7 +59,31 @@ class PurchasesHome extends StatelessWidget {
                       ServiceWidget(
                         imahePath: "assets/soref.png",
                         name: "",
-                        action: () {
+                        action: () async {
+                          showDialog(context: context, builder: (
+                              context) {
+                            InvoiceHelper.items?.clear();
+
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          });
+                          var _itstorVm = Provider.of<ItstorVM>(context,listen: false);
+                          var _storTypes = Provider.of<StortypeVM>(context,listen: false);
+                          InvoiceHelper.user = account_vm.user;
+                          await _subSetup_Vm.getSuppliers();
+                          PurchasesHelper.Sppliers = _subSetup_Vm.Suppliers;
+                          var _poRefhdrVm = Provider.of<PoRefhdrVM>(context,listen: false);
+                          await _poRefhdrVm.GetPohdrs();
+                          await _itstorVm.GetAllItems();
+                          print(_itstorVm.items?.length);
+                          StortypeM? storid = await _storTypes.findstorbyname(InvoiceHelper.user?.storid??'');
+                          InvoiceHelper.storid = storid?.id??0;
+                          print(InvoiceHelper.storid);
+
+                          await _itstorVm.GetItemsByStoreId(InvoiceHelper.storid);
+                          InvoiceHelper.items = _itstorVm.items;
+
+                          Navigator.pop(context);
                           Navigation.puchNav(ReturnInvoice(), context);
                         },
                       ),

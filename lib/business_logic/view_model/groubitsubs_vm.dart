@@ -27,6 +27,12 @@ class GroubItSubsVM extends ChangeNotifier{
     notifyListeners();
     return res;
   }
+  Future<List<GroubItSubsM>?> GetSubGroups(String mainGroup)async{
+    var res= await accountReptra.GetSubGroups(mainGroup);
+    groups = res;
+    notifyListeners();
+    return res;
+  }
 
 
 

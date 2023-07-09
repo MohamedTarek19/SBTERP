@@ -64,6 +64,7 @@ class _SubGroupsState extends State<SubGroups> {
                     showDialog(context: context, builder: (context) {return const Center(child: CircularProgressIndicator());});
                     newGroups.gitemsub = TController.text;
                     newGroups.gitemmain = StorTypeHelper.mainGroupVal;
+                    print(StorTypeHelper.mainGroupVal);
                     await _groupItem_Vm.AddGroup(newGroups);
                     setState(() {
                       StorTypeHelper.TempSubGroups?.add(newGroups);
